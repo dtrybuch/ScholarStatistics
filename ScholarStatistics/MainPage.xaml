@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TabbedPage  xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:forms="clr-namespace:Microcharts.Forms;assembly=Microcharts.Forms"
+             mc:Ignorable="d"
+             x:Class="ScholarStatistics.MainPage">
+    <ContentPage Title="Kategorie">
+        <StackLayout>
+            <SearchBar Placeholder="Wpisz cokolwiek..."
+                                CancelButtonColor="Orange"
+                                PlaceholderColor="Orange"
+                                TextColor="Orange"
+                                HorizontalTextAlignment="Center"
+                                FontSize="Medium"
+                                FontAttributes="Italic"
+                                SearchButtonPressed="OnSearchButtonPressed"/>
+
+            <ProgressBar 
+                            x:Name="SearchProgressBar"
+                            ProgressColor="Orange"
+                            Progress="{Binding Progress}" />
+            <Label
+                Text="{Binding LabelText}"
+                FontSize = "20"
+                HorizontalOptions="Center">
+                
+            </Label>
+            <!-- Place new controls here -->
+            <StackLayout Orientation="Vertical">
+                <forms:ChartView 
+                                x:Name="Chart1"
+                                HeightRequest="400"/> 
+                    
+            </StackLayout>
+        </StackLayout>
+    </ContentPage>
+    <ContentPage Title="Autorzy">
+        <forms:ChartView 
+            x:Name="Chart2"
+            HeightRequest="300"/>
+        </ContentPage>
+</TabbedPage>
