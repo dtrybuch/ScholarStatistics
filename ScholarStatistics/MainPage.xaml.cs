@@ -1,16 +1,20 @@
 ﻿using Microcharts;
+using ScholarStatistics.Helpers;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.ServiceModel.Syndication;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 using Xamarin.Forms;
+using Xamarin.Forms.Internals;
 
 namespace ScholarStatistics
 {
@@ -20,7 +24,7 @@ namespace ScholarStatistics
     [DesignTimeVisible(false)]
     public partial class MainPage : TabbedPage
     {
-        private Random rnd = new Random();
+        public string SearchText { get; set; }
         private int max_results = 100;
         private string labelText;
         public string LabelText
@@ -29,7 +33,40 @@ namespace ScholarStatistics
             set
             {
                 labelText = value;
-                OnPropertyChanged(nameof(LabelText)); // Notify that there was a change on this property
+                OnPropertyChanged(nameof(LabelText)); 
+            }
+        }
+
+        private string authorPublicationsNumber;
+        public string AuthorPublicationsNumber
+        {
+            get { return authorPublicationsNumber; }
+            set
+            {
+                authorPublicationsNumber = value;
+                OnPropertyChanged(nameof(AuthorPublicationsNumber)); 
+            }
+        }
+
+        private string authorFullName;
+        public string AuthorFullName
+        {
+            get { return authorFullName; }
+            set
+            {
+                authorFullName = value;
+                OnPropertyChanged(nameof(AuthorFullName));
+            }
+        }
+
+        private string mainAffiliation;
+        public string MainAffiliation
+        {
+            get { return mainAffiliation; }
+            set
+            {
+                mainAffiliation = value;
+                OnPropertyChanged(nameof(MainAffiliation)); 
             }
         }
 
@@ -40,7 +77,7 @@ namespace ScholarStatistics
             set
             {
                 progress = value;
-                OnPropertyChanged(nameof(Progress)); // Notify that there was a change on this property
+                OnPropertyChanged(nameof(Progress)); 
             }
         }
 
@@ -49,133 +86,86 @@ namespace ScholarStatistics
             InitializeComponent();
         }
 
-        void OnSearchButtonPressed(object sender, EventArgs e)
+        void OnAuthorSearchButtonPressed(object sender, EventArgs e)
         {
             try
             {
                 SearchBar searchBar = (SearchBar)sender;
+                SearchText = searchBar.Text;
                 //HttpResponseMessage response = client.GetAsync("https://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=10").Result;
                 //LabelText = response.Content.ReadAsStringAsync().Result;
-                Task.Run(async () => await ShowCharts(searchBar.Text));
+                Task.Run(async () => await ShowAuthorResults(searchBar.Text));
             }
             catch(Exception ex)
             {
                 LabelText = ex.Message;
             }
         }
-        async Task ShowCharts(string searchText)
+        async Task ShowAuthorResults(string searchText)
         {
-            Atom10FeedFormatter formatter = new Atom10FeedFormatter();
+            
             BindingContext = this;
             await UpdateSearchProgressBar(0.2);
-            using (XmlReader reader = XmlReader.Create("https://export.arxiv.org/api/query?search_query=" + searchText + "&max_results=" + max_results))
+            using (XmlReader reader = XmlReader.Create("https://export.arxiv.org/api/query?search_query=au:" + searchText + "&max_results=" + max_results))
             {
-                formatter.ReadFrom(reader);
-                if (formatter.Feed.Items.Count() == 0)
+                var feed = SyndicationFeed.Load(reader);
+                if (feed.Items.Count() == 0)
                 {
                     await UpdateSearchProgressBar(1.0);
                     LabelText = "Not Found";
                 }
 
-                await Task.Run(async () => await FillCharts(formatter));
+                await Task.Run(async () => await FillCharts(feed));
             }
         }
-        async Task FillCharts(Atom10FeedFormatter formatter)
+        async Task FillCharts(SyndicationFeed feed)
         {
-            Chart1.Chart = new BarChart();
-            Chart1.Chart = new DonutChart();
+            var chartHelper = new ChartHelper();
             await UpdateSearchProgressBar(0.0f);
+            var (affiliation, authorFullName, categoriesCounts, authorsCounts) = await GetMainData(feed);
+            MainAffiliation = "";
+            AuthorFullName = "";
+            MainAffiliation = affiliation;
+            AuthorPublicationsNumber = feed.Items.Count().ToString();
+            AuthorFullName = authorFullName;
+            if (MainAffiliation == "")
+                MainAffiliation = "Not Found";
+            BindingContext = this;
+            var categoryEntries = chartHelper.GetEntry(categoriesCounts);
+            var authorEntries = chartHelper.GetEntry(authorsCounts);
+
+            Chart1.Chart = chartHelper.FillBarChart(Chart1.Chart, categoryEntries);
+            Chart2.Chart = chartHelper.FillDonutChart(Chart2.Chart, authorEntries);
+            Chart2.HeightRequest = chartHelper.SetChartRequestHeight(authorEntries);
+            chartHelper.SetChartRequestHeight(authorEntries);
+            await UpdateSearchProgressBar(1.0f);
+        }
+        public async Task<(string, string, List<EntryPair>, List<EntryPair>)> GetMainData(SyndicationFeed feed)
+        {
             int itemNumber = 0;
             var categoriesCounts = new List<EntryPair>();
             var authorsCounts = new List<EntryPair>();
-            foreach (SyndicationItem item in formatter.Feed.Items)
+            var affiliation = "";
+            var fullName = "";
+            var dataHelper = new DataHelper();
+            foreach (SyndicationItem item in feed.Items)
             {
+                var tmpAff = dataHelper.GetAffiliation(item, SearchText);
+                if (affiliation.Length < tmpAff.Length)
+                    affiliation = tmpAff;
+                var tmpAut = dataHelper.GetLongerFullName(item, SearchText);
+                if (fullName.Length < tmpAut.Length)
+                    fullName = tmpAut;
                 Debug.WriteLine(SearchProgressBar.Progress);
 
-                await UpdateSearchProgressBar((double)itemNumber++ / formatter.Feed.Items.Count());
+                await UpdateSearchProgressBar((double)itemNumber++ / feed.Items.Count());
 
-                categoriesCounts = GetCategories(item, categoriesCounts);
-                authorsCounts = GetAuthors(item, authorsCounts);
+                categoriesCounts = dataHelper.GetCategoriesCount(item, categoriesCounts);
+                authorsCounts = dataHelper.GetAuthorsCount(item, authorsCounts);
             }
-            var categoryEntries = GetEntry(categoriesCounts);
-            var authorEntries = GetEntry(authorsCounts);
-            var dependency = DependencyService.Get<INativeFont>();
-            if (categoryEntries.Count > 0)
-            {
-                Chart1.Chart = new BarChart()
-                {
-                    Entries = categoryEntries,
-                    LabelTextSize = dependency.GetNativeSize(10)
+            return (affiliation, fullName, categoriesCounts, authorsCounts);
+        }
 
-                };
-            }
-            if(authorEntries.Count > 0)
-            {
-                Chart2.Chart = new DonutChart()
-                {
-                    Entries = authorEntries,
-                    LabelTextSize = dependency.GetNativeSize(5),
-                    LabelMode = LabelMode.LeftAndRight,
-                    GraphPosition = GraphPosition.Center
-
-                };
-            }
-            await UpdateSearchProgressBar(1.0f);
-        }
-        List<ChartEntry> GetEntry(List<EntryPair> pairs)
-        {
-            var result = new List<ChartEntry>();
-            foreach (var pair in pairs)
-            {
-                if (pair.Name == "") continue;
-                byte[] bytes = new byte[3];
-                rnd.NextBytes(bytes);
-                var red = bytes[0];
-                var green = bytes[1];
-                var blue = bytes[2];
-                result.Add(new ChartEntry(pair.Count)
-                {
-                    Label = pair.Name,
-                    ValueLabel = pair.Count.ToString(),
-                    Color = new SKColor(red, green, blue)
-                });
-            }
-            return result;
-        }
-        List<EntryPair> GetCategories(SyndicationItem item, List<EntryPair> categoriesCounts)
-        {
-            foreach (var category in item.Categories)
-            {
-                if (categoriesCounts.Where(item => item.Name == SubjectClassifications.GetSubject(category.Name)).Count() > 0)
-                {
-                    categoriesCounts.FirstOrDefault(item => item.Name == SubjectClassifications.GetSubject(category.Name)).Count++;
-                }
-                else
-                {
-                    categoriesCounts.Add(new EntryPair(SubjectClassifications.GetSubject(category.Name)));
-                }
-            }
-            return categoriesCounts;
-        }
-        List<EntryPair> GetAuthors(SyndicationItem item, List<EntryPair> authorsCounts)
-        {
-            foreach (var author in item.Authors)
-            {
-                var names = author.Name.Split(" ");
-                if(names.Count() > 1)
-                {
-                    if (authorsCounts.Where(item => item.Name.Contains(names[1])).Count() > 0)
-                    {
-                        authorsCounts.FirstOrDefault(item => item.Name.Contains(names[1])).Count++;
-                    }
-                    else
-                    {
-                        authorsCounts.Add(new EntryPair(author.Name));
-                    }
-                } 
-            }
-            return authorsCounts;
-        }
         async Task UpdateSearchProgressBar(double value)
         {
             await Task.Run(() => Progress = value);
