@@ -1,4 +1,5 @@
 ﻿using Microcharts;
+using Plugin.Connectivity;
 using ScholarStatistics.Helpers;
 using SkiaSharp;
 using System;
@@ -26,16 +27,6 @@ namespace ScholarStatistics
     {
         public string SearchText { get; set; }
         private int max_results = 100;
-        private string labelText;
-        public string LabelText
-        {
-            get { return labelText; }
-            set
-            {
-                labelText = value;
-                OnPropertyChanged(nameof(LabelText)); 
-            }
-        }
 
         private string authorPublicationsNumber;
         public string AuthorPublicationsNumber
@@ -90,15 +81,21 @@ namespace ScholarStatistics
         {
             try
             {
-                SearchBar searchBar = (SearchBar)sender;
-                SearchText = searchBar.Text;
-                //HttpResponseMessage response = client.GetAsync("https://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=10").Result;
-                //LabelText = response.Content.ReadAsStringAsync().Result;
-                Task.Run(async () => await ShowAuthorResults(searchBar.Text));
+                if(CrossConnectivity.Current.IsConnected)
+                {
+                    SearchBar searchBar = (SearchBar)sender;
+                    SearchText = searchBar.Text;
+                    //HttpResponseMessage response = client.GetAsync("https://export.arxiv.org/api/query?search_query=all:electron&start=0&max_results=10").Result;
+                    //LabelText = response.Content.ReadAsStringAsync().Result;
+                    Task.Run(async () => await ShowAuthorResults(searchBar.Text));
+                }
+                else
+                    Device.BeginInvokeOnMainThread(() => DependencyService.Get<IToastMessage>().LongAlert("No internet connection"));
+
             }
             catch(Exception ex)
             {
-                LabelText = ex.Message;
+                Device.BeginInvokeOnMainThread(() => DependencyService.Get<IToastMessage>().LongAlert(ex.Message));
             }
         }
         async Task ShowAuthorResults(string searchText)
@@ -112,7 +109,7 @@ namespace ScholarStatistics
                 if (feed.Items.Count() == 0)
                 {
                     await UpdateSearchProgressBar(1.0);
-                    LabelText = "Not Found";
+                    Device.BeginInvokeOnMainThread(() => DependencyService.Get<IToastMessage>().LongAlert("Not Found"));
                 }
 
                 await Task.Run(async () => await FillCharts(feed));
@@ -124,7 +121,7 @@ namespace ScholarStatistics
             await UpdateSearchProgressBar(0.0f);
             var (affiliation, authorFullName, categoriesCounts, authorsCounts) = await GetMainData(feed);
             MainAffiliation = "";
-            AuthorFullName = "";
+            AuthorFullName = ""; 
             MainAffiliation = affiliation;
             AuthorPublicationsNumber = feed.Items.Count().ToString();
             AuthorFullName = authorFullName;

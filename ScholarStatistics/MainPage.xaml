@@ -20,13 +20,6 @@
                             x:Name="SearchProgressBar"
                             ProgressColor="Orange"
                             Progress="{Binding Progress}" />
-            
-            <Label
-                Text="{Binding LabelText}"
-                FontSize = "20"
-                HorizontalOptions="Center">
-                
-            </Label>
 
             <ScrollView VerticalOptions="FillAndExpand">
                 <StackLayout>
