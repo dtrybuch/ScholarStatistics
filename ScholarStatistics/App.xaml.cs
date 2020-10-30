@@ -10,7 +10,7 @@ namespace ScholarStatistics
         {
             InitializeComponent();
 
-            MainPage = new MainPage();
+            MainPage = new NavigationPage(new CategoryPage());
         }
 
         protected override void OnStart()
