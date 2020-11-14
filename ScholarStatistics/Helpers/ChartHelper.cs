@@ -1,4 +1,5 @@
 ﻿using Microcharts;
+using ScholarStatistics.Models;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
@@ -44,25 +45,53 @@ namespace ScholarStatistics.Helpers
             }
             return (DonutChart) chart;
         }
-        public List<ChartEntry> GetEntry(List<EntryPair> pairs)
+        public List<ChartEntry> GetCategoriesDifferenceDaysEntry(List<Category> categories)
         {
             var result = new List<ChartEntry>();
-            foreach (var pair in pairs)
+            foreach (var category in categories)
             {
-                if (pair.Name == "") continue;
+                if (category.Name == "") continue;
                 byte[] bytes = new byte[3];
                 rnd.NextBytes(bytes);
                 var red = bytes[0];
                 var green = bytes[1];
                 var blue = bytes[2];
-                result.Add(new ChartEntry(pair.Count)
+                result.Add(new ChartEntry((float)category.DifferenceBetweenPublicationsInDays)
                 {
-                    Label = pair.Name,
-                    ValueLabel = pair.Count.ToString(),
+                    Label = category.Name,
+                    ValueLabel = category.DifferenceBetweenPublicationsInDays.ToString("0.00"),
                     Color = new SKColor(red, green, blue)
                 });
             }
             return result;
+        }
+
+        public List<ChartEntry> GetCategoryDaysPercentageEntry(Category category)
+        {
+            var result = new List<ChartEntry>();
+            AddPercentageValueToChartEntry(result, "Monday", category.PercentageOfMondays);
+            AddPercentageValueToChartEntry(result, "Tuesday", category.PercentageOfTuesdays);
+            AddPercentageValueToChartEntry(result, "Wednesday", category.PercentageOfWednesdays);
+            AddPercentageValueToChartEntry(result, "Thursday", category.PercentageOfThursdays);
+            AddPercentageValueToChartEntry(result, "Friday", category.PercentageOfFridays);
+            AddPercentageValueToChartEntry(result, "Saturday", category.PercentageOfSaturdays);
+            AddPercentageValueToChartEntry(result, "Sunday", category.PercentageOfSundays);
+            return result;
+        }
+
+        private void AddPercentageValueToChartEntry(List<ChartEntry> entries, string day, double value)
+        {
+            byte[] bytes = new byte[3];
+            rnd.NextBytes(bytes);
+            var red = bytes[0];
+            var green = bytes[1];
+            var blue = bytes[2];
+            entries.Add(new ChartEntry((float)value)
+            {
+                Label = day,
+                ValueLabel = Math.Round(value).ToString() + "%",
+                Color = new SKColor(red, green, blue)
+            });
         }
 
         public float SetChartRequestHeight(List<ChartEntry> data)

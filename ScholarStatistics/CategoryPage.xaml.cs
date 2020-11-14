@@ -28,16 +28,18 @@ namespace ScholarStatistics
     // Learn more about making custom code visible in the Xamarin.Forms previewer
     // by visiting https://aka.ms/xamarinforms-previewer
     [DesignTimeVisible(false)]
-    public partial class CategoryPage : ContentPage
+    public partial class CategoryPage : TabbedPage
     {
         public ObservableCollection<Category> Categories { get; private set; } = new ObservableCollection<Category>();
+        public ObservableCollection<Affiliation> Affiliations { get; private set; } = new ObservableCollection<Affiliation>();
+        private readonly ChartHelper chartHelper = new ChartHelper();
         public CategoryPage()
         {
             InitializeComponent();
-            GetCategories();
+            GetCategoriesAndAffiliations();
         }
 
-        void GetCategories()
+        void GetCategoriesAndAffiliations()
         {
             if (Connectivity.NetworkAccess != NetworkAccess.Internet)
             {
@@ -56,6 +58,14 @@ namespace ScholarStatistics
                 string responseBody = response.Content.ReadAsStringAsync().Result;
                 //CategoriesView.ItemsSource = Categories;
                 Categories = JsonConvert.DeserializeObject<ObservableCollection<Category>>(responseBody);
+                var categoryEntries = chartHelper.GetCategoriesDifferenceDaysEntry(Categories.OrderByDescending(category => category.DifferenceBetweenPublicationsInDays).Take(20).ToList());
+                Chart1.Chart = chartHelper.FillBarChart(Chart1.Chart, categoryEntries);
+            }
+            using (var response = client.GetAsync("https://10.0.2.2:44320/affiliations").Result)
+            {
+                response.EnsureSuccessStatusCode();
+                string responseBody = response.Content.ReadAsStringAsync().Result;
+                Affiliations = JsonConvert.DeserializeObject<ObservableCollection<Affiliation>>(responseBody);
                 BindingContext = this;
             }
         }
@@ -64,6 +74,13 @@ namespace ScholarStatistics
         {
             Category category = e.Item as Category;
             await Navigation.PushAsync(new CategoryDetailPage(category));
+        }
+
+        async void Pin_MarkerClicked(object sender, Xamarin.Forms.Maps.PinClickedEventArgs e)
+        {
+            var item = sender as Xamarin.Forms.Maps.Pin;
+            var affiliation = Affiliations.Where(affiliation => affiliation.Name == item.Label).FirstOrDefault();
+            await Navigation.PushAsync(new CategoryListPage(affiliation));
         }
     }
 

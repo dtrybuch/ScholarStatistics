@@ -1,14 +1,70 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage  xmlns="http://xamarin.com/schemas/2014/forms"
+<TabbedPage  xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:forms="clr-namespace:Microcharts.Forms;assembly=Microcharts.Forms"
+             xmlns:maps="clr-namespace:Xamarin.Forms.Maps;assembly=Xamarin.Forms.Maps"
              mc:Ignorable="d"
              x:Class="ScholarStatistics.CategoryPage"
               Title="Categories">
-    <ListView
-            x:Name="CategoriesView"
-            ItemsSource="{Binding Categories}"
-            ItemTapped="OnCategoryTapped">
-    </ListView>
-</ContentPage>
+    <ContentPage
+        Title="General">
+        <ScrollView>
+            <StackLayout
+                Orientation="Vertical">
+            
+                <Label
+                    VerticalTextAlignment="Center"
+                        HorizontalTextAlignment="Center"
+                        FontSize="Medium"
+                    Text="Categories with the most difference between date of added unofficialy and officialy (in days).">
+                </Label>
+                <forms:ChartView 
+                    x:Name="Chart1"
+                    HeightRequest="400"
+                    />
+            
+            </StackLayout>
+        </ScrollView>
+    </ContentPage>
+    <ContentPage
+        Title="Map">
+        <StackLayout>
+            <maps:Map x:Name="map" 
+                      ItemsSource="{Binding Affiliations}">
+                <x:Arguments>
+                    <maps:MapSpan>
+                        <x:Arguments>
+                            <maps:Position>
+                                <x:Arguments>
+                                    <x:Double>52.242947</x:Double>
+                                    <x:Double>19.022081</x:Double>
+                                </x:Arguments>
+                            </maps:Position>
+                            <x:Double>10.00</x:Double>
+                            <x:Double>10.00</x:Double>
+                        </x:Arguments>
+                    </maps:MapSpan>
+                </x:Arguments>
+                <maps:Map.ItemTemplate>
+                    <DataTemplate>
+                        <maps:Pin Position="{Binding Position}"
+                                  Address="{Binding City}"
+                                  Label="{Binding Name}" 
+                                  MarkerClicked="Pin_MarkerClicked"/>
+                    </DataTemplate>
+                </maps:Map.ItemTemplate>
+                
+            </maps:Map>
+        </StackLayout>
+    </ContentPage>
+    <ContentPage
+        Title="Details">
+        <ListView
+                x:Name="CategoriesView"
+                ItemsSource="{Binding Categories}"
+                ItemTapped="OnCategoryTapped">
+            
+        </ListView>
+    </ContentPage>
+</TabbedPage>
