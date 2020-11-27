@@ -13,6 +13,8 @@ namespace ScholarStatistics.Models
         public string Country { get; set; }
         public double Lattitude { get; set; }
         public double Longitude { get; set; }
+        public int CountOfTopTenCategories { get; set; }
+        public List<int> CategoriesUsingInThisAffiliationFK { get; set; }
         public Position Position {
             get {
                 return new Position(Lattitude, Longitude); 

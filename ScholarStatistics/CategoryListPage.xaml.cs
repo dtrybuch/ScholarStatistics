@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using ScholarStatistics.Helpers;
 using ScholarStatistics.Models;
 using System;
 using System.Collections.Generic;
@@ -17,33 +18,20 @@ namespace ScholarStatistics
     public partial class CategoryListPage : ContentPage
     {
         public Affiliation Affiliation { get; set; }
+        public ObservableCollection<Category> AllCategories { get; set; }
         public ObservableCollection<Category> Categories { get; set; }
-        public CategoryListPage(Affiliation affiliation)
+        public CategoryListPage(Affiliation affiliation, ObservableCollection<Category> allCategories)
         {
             Affiliation = affiliation;
+            AllCategories = allCategories;
             InitializeComponent();
-            GetCategory();
+            GetCategories();
         }
 
-        public void GetCategory()
+        public void GetCategories()
         {
-            if (Connectivity.NetworkAccess != NetworkAccess.Internet)
-            {
-                var service = DependencyService.Get<IToastMessage>();
-                service.LongAlert("No access to the Internet");
-                return;
-            }
-            HttpClientHandler clientHandler = new HttpClientHandler();
-            clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
-
-            HttpClient client = new HttpClient(clientHandler);
-            using (var response = client.GetAsync("https://10.0.2.2:44320/affiliations/" + Affiliation.AffiliationId).Result)
-            {
-                response.EnsureSuccessStatusCode();
-                string responseBody = response.Content.ReadAsStringAsync().Result;
-                Categories = JsonConvert.DeserializeObject<ObservableCollection<Category>>(responseBody);
-                BindingContext = this;
-            }
+            Categories = new ObservableCollection<Category>(AllCategories.Where(allcategory => Affiliation.CategoriesUsingInThisAffiliationFK.Contains(allcategory.CategoryId)));
+            BindingContext = this;
         }
     }
 }

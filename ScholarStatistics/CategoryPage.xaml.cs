@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -37,6 +38,7 @@ namespace ScholarStatistics
         {
             InitializeComponent();
             GetCategoriesAndAffiliations();
+            webView.Source = Path.Combine(WebAPIHelper.GetAPIBaseURL(),"heatmap");
         }
 
         void GetCategoriesAndAffiliations()
@@ -52,16 +54,21 @@ namespace ScholarStatistics
 
             // Pass the handler to httpclient(from you are calling api)
             HttpClient client = new HttpClient(clientHandler);
-            using (var response = client.GetAsync("https://10.0.2.2:44320/categories").Result)
+            client.Timeout = TimeSpan.FromSeconds(1000);
+            using (var response = client.GetAsync(WebAPIHelper.GetAPIBaseURL() + "categories").Result)
             {
                 response.EnsureSuccessStatusCode();
                 string responseBody = response.Content.ReadAsStringAsync().Result;
-                //CategoriesView.ItemsSource = Categories;
                 Categories = JsonConvert.DeserializeObject<ObservableCollection<Category>>(responseBody);
                 var categoryEntries = chartHelper.GetCategoriesDifferenceDaysEntry(Categories.OrderByDescending(category => category.DifferenceBetweenPublicationsInDays).Take(20).ToList());
+                var daysMaxEntries = chartHelper.GetCategoriesDaysEntry(Categories.ToList(), true);
+                var daysMinEntries = chartHelper.GetCategoriesDaysEntry(Categories.ToList(), false);
                 Chart1.Chart = chartHelper.FillBarChart(Chart1.Chart, categoryEntries);
+                Chart2.Chart = chartHelper.FillBarChart(Chart1.Chart, daysMaxEntries);
+                Chart3.Chart = chartHelper.FillBarChart(Chart2.Chart, daysMinEntries);
             }
-            using (var response = client.GetAsync("https://10.0.2.2:44320/affiliations").Result)
+
+            using (var response = client.GetAsync(WebAPIHelper.GetAPIBaseURL() + "affiliations").Result)
             {
                 response.EnsureSuccessStatusCode();
                 string responseBody = response.Content.ReadAsStringAsync().Result;
@@ -76,12 +83,15 @@ namespace ScholarStatistics
             await Navigation.PushAsync(new CategoryDetailPage(category));
         }
 
-        async void Pin_MarkerClicked(object sender, Xamarin.Forms.Maps.PinClickedEventArgs e)
+        async void Pin_InfoClicked(object sender, Xamarin.Forms.Maps.PinClickedEventArgs e)
         {
+
             var item = sender as Xamarin.Forms.Maps.Pin;
             var affiliation = Affiliations.Where(affiliation => affiliation.Name == item.Label).FirstOrDefault();
-            await Navigation.PushAsync(new CategoryListPage(affiliation));
+            await Navigation.PushAsync(new CategoryListPage(affiliation, Categories));
         }
+
+
     }
 
 }

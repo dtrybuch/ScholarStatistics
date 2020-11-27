@@ -7,46 +7,62 @@
              x:Class="ScholarStatistics.CategoryDetailPage"
              Title="{Binding Category}">
     <ContentPage.Content>
-        <StackLayout>
-            <Label Text="The difference between date of publication in Arxiv and Scopus:" 
-                   VerticalTextAlignment="Center"
-                   HorizontalTextAlignment="Center"
-                   FontSize="Medium"/>
-            <Label Text="{Binding Category.DifferenceBetweenPublicationsInDays, StringFormat='{0:0.00} days'}" 
-                   VerticalTextAlignment="Center"
-                   HorizontalTextAlignment="Center"
-                   FontSize="Large"
-                   TextColor="Red"/>
-            <Label Text="The ratio between published officially and all Arxiv publications:" 
-                   VerticalTextAlignment="Center"
-                   HorizontalTextAlignment="Center"
-                   FontSize="Medium"/>
-            <Label Text="{Binding Category.RatioPublications}" 
-                   VerticalTextAlignment="Center"
-                   HorizontalTextAlignment="Center"
-                   FontSize="Large"
-                   TextColor="Red"/>
-            <Label Text="Main country:" 
-                   VerticalTextAlignment="Center"
-                   HorizontalTextAlignment="Center"
-                   FontSize="Medium"/>
-            <Label Text="{Binding Category.MainCountry}" 
-                   VerticalTextAlignment="Center"
-                   HorizontalTextAlignment="Center"
-                   FontSize="Large"
-                   TextColor="Red"/>
-            <Label
+        <ScrollView
+            InputTransparent="True">
+            <StackLayout>
+                <Label Text="The difference between date of publication in Arxiv and Scopus:" 
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center"
+                       FontSize="Medium"/>
+                <Label Text="{Binding Category.DifferenceBetweenPublicationsInDays, StringFormat='{0:0.00} days'}" 
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center"
+                       FontSize="Large"
+                       TextColor="Red"/>
+                <Label Text="The ratio between published officially and all Arxiv publications:" 
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center"
+                       FontSize="Medium"/>
+                <Label Text="{Binding Category.RatioPublications}" 
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center"
+                       FontSize="Large"
+                       TextColor="Red"/>
+                <Label Text="Main country:" 
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center"
+                       FontSize="Medium"/>
+                <Label Text="{Binding Category.MainCountry}" 
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center"
+                       FontSize="Large"
+                       TextColor="Red"/>
+                <Label
+                        VerticalTextAlignment="Center"
+                        HorizontalTextAlignment="Center"
+                        FontSize="Large"
+                        Text="Days of publications">
+                </Label>
+                <forms:ChartView 
+                
+                        x:Name="Chart1"
+                        HeightRequest="300"
+                
+                        />
+                <Label
                     VerticalTextAlignment="Center"
-                    HorizontalTextAlignment="Center"
-                    FontSize="Large"
-                    Text="Days of publications">
-            </Label>
-            <forms:ChartView 
-                
-                    x:Name="Chart1"
-                    HeightRequest="300"
-                
+                        HorizontalTextAlignment="Center"
+                        FontSize="Medium"
+                    Text="Popularity of of the category (red is most popular, green less).">
+                </Label>
+                <ActivityIndicator 
+                    x:Name="webViewIndicator"
+                    IsVisible="False"
+                    IsRunning="False"
                     />
-        </StackLayout>
+                <WebView x:Name="webView" WidthRequest="1000" HeightRequest="500" 
+                         Navigated="OnWebViewNavigated"/>
+            </StackLayout>
+        </ScrollView>
     </ContentPage.Content>
 </ContentPage>

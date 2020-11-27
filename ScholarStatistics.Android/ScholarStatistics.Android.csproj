@@ -64,6 +64,8 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <AndroidAsset Include="Assets\local.html" />
+    <Compile Include="BaseUrl.cs" />
     <Compile Include="MainActivity.cs" />
     <Compile Include="NativeFont .cs" />
     <Compile Include="Resources\Resource.designer.cs" />

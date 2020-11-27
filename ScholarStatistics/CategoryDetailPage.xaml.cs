@@ -2,6 +2,7 @@
 using ScholarStatistics.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +23,16 @@ namespace ScholarStatistics
             InitializeComponent();
             var categoryEntries = chartHelper.GetCategoryDaysPercentageEntry(category);
             Chart1.Chart = chartHelper.FillDonutChart(Chart1.Chart, categoryEntries);
+            webViewIndicator.IsVisible = true;
+            webViewIndicator.IsRunning = true;
+            webView.Source = Path.Combine(WebAPIHelper.GetAPIBaseURL(), $"heatmap/{category.CategoryId}");
             BindingContext = this;
+        }
+        private void OnWebViewNavigated(object sender, WebNavigatedEventArgs e)
+        {
+            IsBusy = false;
+            webViewIndicator.IsVisible = false;
+            webViewIndicator.IsRunning = false;
         }
     }
 }

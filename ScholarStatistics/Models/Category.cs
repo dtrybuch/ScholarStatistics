@@ -26,6 +26,20 @@ namespace ScholarStatistics.Models
         public double PercentageOfFridays { get; set; }
         public double PercentageOfSaturdays { get; set; }
         public double PercentageOfSundays { get; set; }
+        public Dictionary<string, int> CountOfDays { get 
+            {
+                return new Dictionary<string, int>()
+                {
+                    { "Monday", CountOfMondays },
+                    { "Tuesday", CountOfTuesdays },
+                    { "Wednesday", CountOfWednesdays },
+                    { "Thursday", CountOfThursdays },
+                    { "Friday", CountOfFridays },
+                    { "Saturday", CountOfSaturdays },
+                    { "Sunday", CountOfSundays },
+                };
+            } 
+        }
         public override string ToString()
         {
             return Name;
